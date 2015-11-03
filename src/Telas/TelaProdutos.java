@@ -15,7 +15,9 @@ public class TelaProdutos extends javax.swing.JFrame {
 
     Connection conexao = ConexaoBanco.getConexao();
     private TelaPrincipal telaAnterior;
-    int idFamilia;
+    int idFamilia = 0;
+    boolean nomeEncontrado = false;
+
     public TelaProdutos() {
         initComponents();
     }
@@ -227,14 +229,43 @@ public class TelaProdutos extends javax.swing.JFrame {
 
         String descricao = descricaoField.getText();
         int familia = idFamilia;
-        double vMin = Double.parseDouble(vMinimoField.getText());
-        double vMax = Double.parseDouble(vMaximoField.getText());
+        double vMin = 0;
+        double vMax = 0;
+        if (!vMinimoField.getText().equalsIgnoreCase("")) {
+            vMin = Double.parseDouble(vMinimoField.getText());
+        } else {
+            JOptionPane.showMessageDialog(null, "Campo 'Saldo Minimo' está em branco");
+        }
+        if (!vMaximoField.getText().equalsIgnoreCase("")) {
+            vMax = Double.parseDouble(vMaximoField.getText());
+        } else {
+            JOptionPane.showMessageDialog(null, "Campo 'Saldo Máximo' está em branco");
+        }
 
         Produtos produto = new Produtos(descricao, familia, vMin, vMax);
         ProdutosDAO dao = new ProdutosDAO(conexao);
 
         try {
-            dao.adicionar(produto);
+
+            int[] posicoes = new int[2];
+            posicoes = produto.verficaCampos(descricao, familia);
+
+            if (posicoes[0] == 0) {
+                JOptionPane.showMessageDialog(null, "Campo 'Descrição' está em branco");
+            } else if (posicoes[1] == 0) {
+                JOptionPane.showMessageDialog(null, "Campo 'Familia' está em branco");
+            } else {
+                ResultSet rs = dao.pesquisar(descricao);
+                while (rs.next()) {
+                    if (rs.getString("DESCRICAO").equalsIgnoreCase(descricao)) {
+                        JOptionPane.showMessageDialog(null, "Produto já cadastrado!");
+                    } else {
+                        dao.adicionar(produto);
+                        JOptionPane.showMessageDialog(null, "Produto adastrado com sucesso!");
+                    }
+                }
+
+            }
         } catch (SQLException ex) {
             Logger.getLogger(TelaFamilia.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -253,43 +284,43 @@ public class TelaProdutos extends javax.swing.JFrame {
     }//GEN-LAST:event_botaoSalvarActionPerformed
 
     private void botãoIncluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botãoIncluirActionPerformed
+        descricaoField.setText("");
+        codigoField.setText("");
+        familiaField.setText("");
+        vMinimoField.setText("");
+        vMaximoField.setText("");
+        saldoField.setText("");
         descricaoField.setEnabled(true);
         botaoSalvar.setEnabled(true);
         botaoCancelar.setEnabled(true);
         botaoProcuraFamilia.setEnabled(true);
         vMinimoField.setEnabled(true);
         vMaximoField.setEnabled(true);
-        
+
     }//GEN-LAST:event_botãoIncluirActionPerformed
 
     private void botaoProcuraFamiliaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botaoProcuraFamiliaActionPerformed
 
         familiaField.setText(null);
         Connection conexao = ConexaoBanco.getConexao();
-        boolean nomeEncontrado=false;
-        
+
         FamiliaDAO dao = new FamiliaDAO(conexao);
         ResultSet rs = null;
-        
+
         String descricao = JOptionPane.showInputDialog("Digite a descrição da familia");
         try {
             rs = dao.pesquisar(descricao);
-            while(rs.next())
-            {
-                if (rs.getString("DESCRICAO").equalsIgnoreCase(descricao))
-                {
+            while (rs.next()) {
+                if (rs.getString("DESCRICAO").equalsIgnoreCase(descricao)) {
                     nomeEncontrado = true;
                     idFamilia = Integer.parseInt(rs.getString("ID_FAMILIA"));
                 }
                 //String familia = rs.getString("DESCRICAO");
                 //System.out.println(familia + "\n");
             }
-            if (nomeEncontrado) 
-            {
+            if (nomeEncontrado) {
                 familiaField.setText(descricao);
-            } 
-            else 
-            {
+            } else {
                 JOptionPane.showMessageDialog(this, "Familia não encontrada!");
             }
         } catch (SQLException ex) {
@@ -320,30 +351,35 @@ public class TelaProdutos extends javax.swing.JFrame {
         boolean nomeEncontrado = false;
         ProdutosDAO dao = new ProdutosDAO(conexao);
         ResultSet rs = null;
-        
+        codigoField.setText("");
+        descricaoField.setText("");
+        vMinimoField.setText("");
+        vMaximoField.setText("");
+        saldoField.setText("");
+
         String descricao = JOptionPane.showInputDialog("Digite a descrição do produto");
-        try{
+        try {
             rs = dao.pesquisar(descricao);
-            while(rs.next()){
-                if(rs.getString("DESCRICAO").equalsIgnoreCase(descricao)){
+            while (rs.next()) {
+                if (rs.getString("DESCRICAO").equalsIgnoreCase(descricao)) {
                     nomeEncontrado = true;
                     codigoField.setText(rs.getString("ID_CODIGO"));
                     vMinimoField.setText(rs.getString("SALDO_MIN"));
                     vMaximoField.setText(rs.getString("SALDO_MAX"));
                     saldoField.setText(rs.getString("SALDO_ATUAL"));
-                    
+
                 }
             }
-            if(nomeEncontrado){
+            if (nomeEncontrado) {
                 descricaoField.setText(descricao);
-            }else{
+            } else {
                 JOptionPane.showMessageDialog(this, "Produto não encontrado!");
             }
-        }catch(SQLException ex){
+        } catch (SQLException ex) {
             Logger.getLogger(TelaProdutos.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        
+
+
     }//GEN-LAST:event_botaoPesquisarActionPerformed
 
     private void vMaximoFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vMaximoFieldActionPerformed
